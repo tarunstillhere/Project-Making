@@ -26,15 +26,19 @@ const userRoute = require("./routes/user.js");
 
 
 
-// const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
-
 const dbUrl = process.env.ATLASDB_URL;
-
+// console.log(dbUrl);
 
 main().then((res)=> {
     console.log("Connected to DB.");
 })
-.catch(err => console.log(err));
+.catch(err => {if (err instanceof DNSException) {
+    console.error(`DNS Exception: ${err.message}`);
+    console.error(`Binding Name: ${err.bindingName}`);
+    console.error(`Hostname: ${err.hostname}`);
+} else {
+    console.error(`An unexpected error occurred: ${err.message}`);
+}});
 
 async function main() {
   await mongoose.connect(dbUrl);
@@ -52,7 +56,7 @@ app.use(express.static(path.join(__dirname,"/public")));
 const store = MongoStore.create({
     mongoUrl : dbUrl,
     crypto : {
-        secret : "mysupersecretcode",
+        secret : process.env.SECRET,
     },
     touchAfter : 24 * 3600,
 });
@@ -63,7 +67,7 @@ store.on("error", () => {
 
 const sessionOptions = {
     store,
-    secret : "mysupersecretcode",
+    secret : process.env.SECRET,
     resave : false,
     saveUninitialized : true,
     cookie : {
